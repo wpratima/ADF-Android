@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "506881041116",
+    "project_id": "optix-dev-ap1",
+    "storage_bucket": "optix-dev-ap1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:506881041116:android:0c25daaf308b10ce3aca19",
+        "android_client_info": {
+          "package_name": "com.MetaConsumer.Optix"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "506881041116-gb6bjq1mrt1ikj9slcd733ebrh1ves69.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjs5Kl1GWmklVbt0eh9lVqmn8YPAjn9xI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "506881041116-gb6bjq1mrt1ikj9slcd733ebrh1ves69.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:506881041116:android:d502ffd8ada1afda3aca19",
+        "android_client_info": {
+          "package_name": "com.example.crashapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "506881041116-gb6bjq1mrt1ikj9slcd733ebrh1ves69.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjs5Kl1GWmklVbt0eh9lVqmn8YPAjn9xI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "506881041116-gb6bjq1mrt1ikj9slcd733ebrh1ves69.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
