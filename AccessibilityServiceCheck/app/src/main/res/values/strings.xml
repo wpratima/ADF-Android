@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">AccessibilityServiceCheck</string>
+    <string name="accessibility_service_description">service description</string>
+</resources>
