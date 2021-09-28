@@ -23,6 +23,9 @@ import java.util.List;
 public class MyService extends AccessibilityService {
     private String TAG = "MyService";
     private HashMap<String, Long> previousUrlDetections = new HashMap<>();
+    String packageName;
+    public String foregroundAppName;
+    public String googleAppSearchBarId = "com.google.android.googlequicksearchbox:id/search_box";
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         //Log.e(TAG, "onAccessibilityEvent: ");
@@ -30,28 +33,23 @@ public class MyService extends AccessibilityService {
         //Log.d("event", String.valueOf(event));
 
 
-        //to fetch the url
+        //get accessibility node info
         AccessibilityNodeInfo parentNodeInfo = event.getSource();
-        //AccessibilityWindowInfo windowInfo = event.
         if (parentNodeInfo == null) {
             return;
         }
-        //Log.d("window content", String.valueOf(parentNodeInfo));
+        if(event.getPackageName() != null){
+            packageName = event.getPackageName().toString();
+        }
 
-//        if (parentNodeInfo.getText() != null && parentNodeInfo.getText().length() > 0) {
-//
-//            String capturedText = parentNodeInfo.getText().toString();
-//            Log.d("text captured", capturedText);
-//        }
-        String packageName = event.getPackageName().toString();
 
         //get foreground app name
         PackageManager packageManager = this.getPackageManager();
         try {
             ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
-            final CharSequence applicationLabel = packageManager.getApplicationLabel(applicationInfo);
-            Log.e(TAG, "App name is: "+applicationLabel);
-            Toast.makeText(this, applicationLabel, Toast.LENGTH_SHORT);
+            foregroundAppName = (String) packageManager.getApplicationLabel(applicationInfo);
+            Log.e(TAG, "App name is: "+foregroundAppName);
+            Toast.makeText(this, foregroundAppName, Toast.LENGTH_SHORT);
 
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
@@ -60,6 +58,13 @@ public class MyService extends AccessibilityService {
         //dfs(parentNodeInfo);
         //get all the child views from the nodeInfo
         getChild(parentNodeInfo);
+
+        if(foregroundAppName.equals("Google")){
+            String googleAppsSearchTerm = getGoogleAppsSearchTerm(parentNodeInfo);
+            if(googleAppsSearchTerm != null){
+                Log.d("searchTerm:", googleAppsSearchTerm);
+            }
+        }
 
         //fetch urls from different browsers
         SupportedBrowserConfig browserConfig = null;
@@ -72,7 +77,6 @@ public class MyService extends AccessibilityService {
         if (browserConfig == null) {
             return;
         }
-
         String capturedUrl = captureUrl(parentNodeInfo, browserConfig);
         parentNodeInfo.recycle();
 
@@ -91,9 +95,6 @@ public class MyService extends AccessibilityService {
             previousUrlDetections.put(detectionId, eventTime);
            // analyzeCapturedUrl(capturedUrl, browserConfig.packageName);
         }
-
-
-
     }
 
     public void dfs(AccessibilityNodeInfo info){
@@ -110,15 +111,13 @@ public class MyService extends AccessibilityService {
         }
     }
 
-
-
     @Override
     public void onInterrupt() {
         Log.e(TAG, "onInterrupt: Something went wrong");
     }
 
-//    @Override
-//    protected void onServiceConnected() {
+    @Override
+    protected void onServiceConnected() {
 //        super.onServiceConnected();
 //        AccessibilityServiceInfo info = new AccessibilityServiceInfo();
 //        info.eventTypes = AccessibilityEvent.TYPE_VIEW_CLICKED |
@@ -129,7 +128,26 @@ public class MyService extends AccessibilityService {
 //
 //        this.setServiceInfo(info);
 //        Log.e(TAG, "onServiceConnected: ");
-//    }
+    }
+
+    private String getGoogleAppsSearchTerm(AccessibilityNodeInfo info){
+        //Log.d("in func", "in getgoogleappsearchterm");
+        List<AccessibilityNodeInfo> nodes = info.findAccessibilityNodeInfosByViewId(googleAppSearchBarId);
+        if (nodes == null || nodes.size() <= 0) {
+            return null;
+        }
+
+        AccessibilityNodeInfo searchBarNodeInfo = nodes.get(0);
+        String searchTerm = null;
+        if (searchBarNodeInfo.getText() != null) {
+            searchTerm = searchBarNodeInfo.getText().toString();
+            //Log.d("url in func", url);
+        }
+        searchBarNodeInfo.recycle();
+        //Log.d("search in func",searchTerm);
+        return searchTerm;
+    }
+
     private void getChild(AccessibilityNodeInfo info)
     {
         int i=info.getChildCount();
@@ -140,7 +158,7 @@ public class MyService extends AccessibilityService {
                 String strres = n.getViewIdResourceName();
                 if (n.getText() != null) {
                     String txt = n.getText().toString();
-                    Log.d("Track", strres + "  :  " + txt);
+                    Log.d("Track child", strres + "  :  " + txt);
                 }
                 getChild(n);
             }
@@ -177,18 +195,20 @@ public class MyService extends AccessibilityService {
         String url = null;
         if (addressBarNodeInfo.getText() != null) {
             url = addressBarNodeInfo.getText().toString();
-            Log.d("url from func", url);
+            //Log.d("url in func", url);
         }
         addressBarNodeInfo.recycle();
         return url;
     }
+
     private void analyzeCapturedUrl(@NonNull String capturedUrl, @NonNull String browserPackage) {
         String redirectUrl = "your redirect url is here";
         if (capturedUrl.contains("facebook.com")) {
             performRedirect(redirectUrl, browserPackage);
         }
     }
-// we just reopen the browser app with our redirect url using service context
+
+    // we just reopen the browser app with our redirect url using service context
     private void performRedirect(@NonNull String redirectUrl, @NonNull String browserPackage) {
         try {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(redirectUrl));
@@ -203,5 +223,4 @@ public class MyService extends AccessibilityService {
             startActivity(i);
         }
     }
-
 }
