@@ -16,9 +16,12 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TimeZone;
 
 public class MyService extends AccessibilityService {
     private String TAG = "MyService";
@@ -26,11 +29,12 @@ public class MyService extends AccessibilityService {
     String packageName;
     public String foregroundAppName;
     public String googleAppSearchBarId = "com.google.android.googlequicksearchbox:id/search_box";
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         //Log.e(TAG, "onAccessibilityEvent: ");
         //Log.d("event", String.valueOf(event.getEventTime()));
-        //Log.d("event", String.valueOf(event));
+        Log.d("event", String.valueOf(event));
 
 
         //get accessibility node info
@@ -38,7 +42,7 @@ public class MyService extends AccessibilityService {
         if (parentNodeInfo == null) {
             return;
         }
-        if(event.getPackageName() != null){
+        if (event.getPackageName() != null) {
             packageName = event.getPackageName().toString();
         }
 
@@ -48,8 +52,13 @@ public class MyService extends AccessibilityService {
         try {
             ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
             foregroundAppName = (String) packageManager.getApplicationLabel(applicationInfo);
-            Log.e(TAG, "App name is: "+foregroundAppName);
-            Toast.makeText(this, foregroundAppName, Toast.LENGTH_SHORT);
+
+            final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            final String utcTime = sdf.format(new Date());
+
+            Log.e(TAG, "Foreground App: " + foregroundAppName+ " & timestamp: "+utcTime);
+
 
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
@@ -59,16 +68,16 @@ public class MyService extends AccessibilityService {
         //get all the child views from the nodeInfo
         getChild(parentNodeInfo);
 
-        if(foregroundAppName.equals("Google")){
+        if (foregroundAppName.equals("Google")) {
             String googleAppsSearchTerm = getGoogleAppsSearchTerm(parentNodeInfo);
-            if(googleAppsSearchTerm != null){
+            if (googleAppsSearchTerm != null) {
                 Log.d("searchTerm:", googleAppsSearchTerm);
             }
         }
 
         //fetch urls from different browsers
         SupportedBrowserConfig browserConfig = null;
-        for (SupportedBrowserConfig supportedConfig: getSupportedBrowsers()) {
+        for (SupportedBrowserConfig supportedConfig : getSupportedBrowsers()) {
             if (supportedConfig.packageName.equals(packageName)) {
                 browserConfig = supportedConfig;
             }
@@ -84,7 +93,7 @@ public class MyService extends AccessibilityService {
         if (capturedUrl == null) {
             return;
         }
-        Log.d("captured URL",capturedUrl);
+        Log.d("captured URL", capturedUrl);
 
         long eventTime = event.getEventTime();
         String detectionId = packageName + ", and url " + capturedUrl;
@@ -93,19 +102,19 @@ public class MyService extends AccessibilityService {
         //some kind of redirect throttling
         if (eventTime - lastRecordedTime > 2000) {
             previousUrlDetections.put(detectionId, eventTime);
-           // analyzeCapturedUrl(capturedUrl, browserConfig.packageName);
+            // analyzeCapturedUrl(capturedUrl, browserConfig.packageName);
         }
     }
 
-    public void dfs(AccessibilityNodeInfo info){
-        if(info == null)
+    public void dfs(AccessibilityNodeInfo info) {
+        if (info == null)
             return;
-        if(info.getText() != null && info.getText().length() > 0)
-            System.out.println(info.getText() + " class: "+info.getClassName());
-        for(int i=0;i<info.getChildCount();i++){
+        if (info.getText() != null && info.getText().length() > 0)
+            System.out.println(info.getText() + " class: " + info.getClassName());
+        for (int i = 0; i < info.getChildCount(); i++) {
             AccessibilityNodeInfo child = info.getChild(i);
             dfs(child);
-            if(child != null){
+            if (child != null) {
                 child.recycle();
             }
         }
@@ -130,7 +139,7 @@ public class MyService extends AccessibilityService {
 //        Log.e(TAG, "onServiceConnected: ");
     }
 
-    private String getGoogleAppsSearchTerm(AccessibilityNodeInfo info){
+    private String getGoogleAppsSearchTerm(AccessibilityNodeInfo info) {
         //Log.d("in func", "in getgoogleappsearchterm");
         List<AccessibilityNodeInfo> nodes = info.findAccessibilityNodeInfosByViewId(googleAppSearchBarId);
         if (nodes == null || nodes.size() <= 0) {
@@ -148,17 +157,15 @@ public class MyService extends AccessibilityService {
         return searchTerm;
     }
 
-    private void getChild(AccessibilityNodeInfo info)
-    {
-        int i=info.getChildCount();
-        for(int p=0;p<i;p++)
-        {
-            AccessibilityNodeInfo n=info.getChild(p);
-            if(n!=null) {
+    private void getChild(AccessibilityNodeInfo info) {
+        int i = info.getChildCount();
+        for (int p = 0; p < i; p++) {
+            AccessibilityNodeInfo n = info.getChild(p);
+            if (n != null) {
                 String strres = n.getViewIdResourceName();
                 if (n.getText() != null) {
                     String txt = n.getText().toString();
-                    Log.d("Track child", strres + "  :  " + txt);
+                    //Log.d("Track child", strres + "  :  " + txt);
                 }
                 getChild(n);
             }
@@ -167,6 +174,7 @@ public class MyService extends AccessibilityService {
 
     private static class SupportedBrowserConfig {
         public String packageName, addressBarId;
+
         public SupportedBrowserConfig(String packageName, String addressBarId) {
             this.packageName = packageName;
             this.addressBarId = addressBarId;
@@ -176,12 +184,12 @@ public class MyService extends AccessibilityService {
     @NonNull
     private static List<SupportedBrowserConfig> getSupportedBrowsers() {
         List<SupportedBrowserConfig> browsers = new ArrayList<>();
-        browsers.add( new SupportedBrowserConfig("com.android.chrome", "com.android.chrome:id/url_bar"));
-        browsers.add( new SupportedBrowserConfig("org.mozilla.firefox", "org.mozilla.firefox:id/mozac_browser_toolbar_url_view"));
-        browsers.add( new SupportedBrowserConfig("com.opera.browser", "com.opera.browser:id/url_field"));
-        browsers.add( new SupportedBrowserConfig("com.opera.mini.native", "com.opera.mini.native:id/url_field"));
-        browsers.add( new SupportedBrowserConfig("com.duckduckgo.mobile.android", "com.duckduckgo.mobile.android:id/omnibarTextInput"));
-        browsers.add( new SupportedBrowserConfig("com.microsoft.emmx", "com.microsoft.emmx:id/url_bar"));
+        browsers.add(new SupportedBrowserConfig("com.android.chrome", "com.android.chrome:id/url_bar"));
+        browsers.add(new SupportedBrowserConfig("org.mozilla.firefox", "org.mozilla.firefox:id/mozac_browser_toolbar_url_view"));
+        browsers.add(new SupportedBrowserConfig("com.opera.browser", "com.opera.browser:id/url_field"));
+        browsers.add(new SupportedBrowserConfig("com.opera.mini.native", "com.opera.mini.native:id/url_field"));
+        browsers.add(new SupportedBrowserConfig("com.duckduckgo.mobile.android", "com.duckduckgo.mobile.android:id/omnibarTextInput"));
+        browsers.add(new SupportedBrowserConfig("com.microsoft.emmx", "com.microsoft.emmx:id/url_bar"));
         return browsers;
     }
 
@@ -216,8 +224,7 @@ public class MyService extends AccessibilityService {
             intent.putExtra(Browser.EXTRA_APPLICATION_ID, browserPackage);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
-        }
-        catch(ActivityNotFoundException e) {
+        } catch (ActivityNotFoundException e) {
             // the expected browser is not installed
             Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(redirectUrl));
             startActivity(i);
