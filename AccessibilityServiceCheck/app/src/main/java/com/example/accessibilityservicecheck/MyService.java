@@ -22,19 +22,26 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MyService extends AccessibilityService {
     private String TAG = "MyService";
+    public String googleAppSearchBarId = "com.google.android.googlequicksearchbox:id/search_box";
     private HashMap<String, Long> previousUrlDetections = new HashMap<>();
     String packageName;
-    public String foregroundAppName;
-    public String googleAppSearchBarId = "com.google.android.googlequicksearchbox:id/search_box";
+    public static String foregroundAppName;
+    String capturedUrl;
+    SupportedBrowserConfig browserConfig;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         //Log.e(TAG, "onAccessibilityEvent: ");
         //Log.d("event", String.valueOf(event.getEventTime()));
-        Log.d("event", String.valueOf(event));
+        if(event.getEventType() == AccessibilityEvent.TYPE_VIEW_SELECTED){
+            Log.d("event", String.valueOf(event));
+        }
+        //Log.d("event", String.valueOf(event));
 
 
         //get accessibility node info
@@ -56,9 +63,7 @@ public class MyService extends AccessibilityService {
             final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             final String utcTime = sdf.format(new Date());
-
             Log.e(TAG, "Foreground App: " + foregroundAppName+ " & timestamp: "+utcTime);
-
 
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
@@ -76,7 +81,7 @@ public class MyService extends AccessibilityService {
         }
 
         //fetch urls from different browsers
-        SupportedBrowserConfig browserConfig = null;
+        browserConfig = null;
         for (SupportedBrowserConfig supportedConfig : getSupportedBrowsers()) {
             if (supportedConfig.packageName.equals(packageName)) {
                 browserConfig = supportedConfig;
@@ -190,6 +195,7 @@ public class MyService extends AccessibilityService {
         browsers.add(new SupportedBrowserConfig("com.opera.mini.native", "com.opera.mini.native:id/url_field"));
         browsers.add(new SupportedBrowserConfig("com.duckduckgo.mobile.android", "com.duckduckgo.mobile.android:id/omnibarTextInput"));
         browsers.add(new SupportedBrowserConfig("com.microsoft.emmx", "com.microsoft.emmx:id/url_bar"));
+        browsers.add(new SupportedBrowserConfig("com.coloros.browser", "com.coloros.browser:id/azt"));
         return browsers;
     }
 
